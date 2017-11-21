@@ -19,5 +19,12 @@
   "bugs": {
     "url": "https://github.com/jlucidar/zcamJS/issues"
   },
-  "homepage": "https://github.com/jlucidar/zcamJS#readme"
+  "homepage": "https://github.com/jlucidar/zcamJS#readme",
+  "dependencies": {
+    "request": "^2.83.0"
+  },
+  "devDependencies": {
+    "eslint": "^4.3.0",
+    "eslint-plugin-html": "^3.1.1"
+  }
 }
