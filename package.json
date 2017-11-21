@@ -1,0 +1,23 @@
+{
+  "name": "zcamjs",
+  "version": "1.0.0",
+  "description": "a node.js lib for the Zcam S1 pro",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jlucidar/zcamJS.git"
+  },
+  "keywords": [
+    "zcam",
+    "360cam"
+  ],
+  "author": "Jimmy Lucidarme",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jlucidar/zcamJS/issues"
+  },
+  "homepage": "https://github.com/jlucidar/zcamJS#readme"
+}
