@@ -1,7 +1,83 @@
 var request = require('request');
 var net = require('net');
 var fs = require('fs');
+var util = require('util');
 
+var VALID_SETTINGS=[
+  'ssid', // string type, set Wi-Fi SSID
+  'ap_key', // string type, set Wi-Fi passwd
+  'movfmt',
+  'photosize',
+  'wb', // white balance
+  'iso',
+  'sharpness',
+  'contrast',
+  'saturation',
+  'brightness', // image brightness
+  'meter_mode',
+  'flicker',// [auto, 50Hz, 60Hz]
+  'video_system', // NTSC, PAL
+  'video_output', // CVBS out put
+  'ev',
+  'battery',
+  'lcd', // turn on/off LCD
+  'rotation', // camera stream rotation
+  'mag_pos', //
+  'focus', // [AF, MF]
+  'iris', // aperture
+  'af_mode', // [Normal, Flexible Zone]
+  'af_method', // [Normal, Selection]
+  'af_area', // query current af area
+  'mf_drive', //
+  'photo_q', // Photo quality [basic, fine, s.fine]
+  'led', // control camera LED
+  'beep', // control camera beep
+  'max_exp', // Max exposure time
+  'shutter_angle',
+  'mwb', // manual white balance
+  'lens_zoom', //
+  'lens_focus_pos',
+  'lens_focus_spd',
+  'shutter_spd', // shutter speed
+  'caf_range',
+  'caf_sens', // continue sensitivity
+  'burst_spd', // burst speed
+  'lut', // [sRGB, Z-LOG]
+  'last_file_name', //
+  'camera_rot', //
+  'multiple_mode', // [None, Master, slave]
+  'dewarp', // Distortion correction
+  'vignette', // Vignette correction
+  'noise_reduction', // Noise reduction
+  'tint',
+  'file_number',
+  'lcd_backlight',
+  'hdmi_fmt', // HDMI output resolution
+  'oled',
+  'multiple_id',
+  'multiple_delay',
+  'shoot_mode', // Capture mode, exposure mode, P/A/S/M
+  'ois_mode', // Lens OIS function
+  'split_duration', //
+  'multiple_to', // multiple timeout
+  'liveview_audio', // liveview with audio
+  'max_iso',
+  'dhcp', // enable camera enable dhcpc
+  'Fn', // Fn key function
+  'auto_off',
+  'auto_off_lcd',
+  'photo_tl_num', // photo timelapse mode, max capture number
+  'photo_tl_interval',
+  'caf', // continue AF
+  'hdmi_osd', // turn on/off HDMI OSD
+  'F2', // F2 key function
+  'drive_mode', // [Single, Burst shooting, Time lapse, Self-timer]
+  'grid_display', // display grid in LCD
+  'photo_self_interval',//in s
+  'focus_area', // Af area
+  'level_correction',
+  'WIFI_MODE', //switch wifi mode in ap/sta]
+],
 
 function Zcam(options){
   options = options || {};
@@ -28,6 +104,7 @@ function Zcam(options){
   this.endpoints.still = this.endpoints.root + '/ctrl/still';
   this.endpoints.movie = this.endpoints.root + '/ctrl/rec';
   this.endpoints.setting = this.endpoints.root + '/ctrl';
+  this.endpoints.af = this.endpoints.root + '/ctrl/af';
   this.endpoints.magnify = this.endpoints.root + '/ctrl/mag';
 
 }
@@ -211,7 +288,7 @@ Zcam.prototype.listFiles = function(callback){
 Zcam.prototype.downloadFile = function(filename, path, callback){
   if(typeof filename==='function'){
     callback = filename;
-    return callback("you must specified a filename");
+    return callback("you must specify a filename");
   }
   if(typeof path==='function'){
     callback = path;
@@ -233,7 +310,7 @@ Zcam.prototype.downloadFile = function(filename, path, callback){
 Zcam.prototype.getFileStream = function(filename, callback){
   if(typeof filename==='function'){
     callback = filename;
-    return callback("you must specified a filename");
+    return callback("you must specify a filename");
   }
 
   callback(null,request.get({url:this.endpoints.filesManager + filename}));
@@ -244,7 +321,7 @@ Zcam.prototype.getFileStream = function(filename, callback){
 Zcam.prototype.deleteFile = function(filename,callback){
   if(typeof filename==='function'){
     callback = filename;
-    return callback("you must specified a filename");
+    return callback("you must specify a filename");
   }
   request.get({url:this.endpoints.filesManager + filename + "?act=rm", json:true}, function (error, response, body) {
     if(error) return callback(error);
@@ -258,7 +335,7 @@ Zcam.prototype.deleteFile = function(filename,callback){
 Zcam.prototype.getFileInfo = function(filename,callback){
   if(typeof filename==='function'){
     callback = filename;
-    return callback("you must specified a filename");
+    return callback("you must specify a filename");
   }
   request.get({url:this.endpoints.filesManager + filename + "?act=info", json:true}, function (error, response, body) {
     if(error) return callback(error);
@@ -275,7 +352,7 @@ Zcam.prototype.getFileInfo = function(filename,callback){
 Zcam.prototype.downloadFileThumbnail = function(filename, path, callback){
   if(typeof filename==='function'){
     callback = filename;
-    return callback("you must specified a filename");
+    return callback("you must specify a filename");
   }
   if(typeof path==='function'){
     callback = path;
@@ -297,7 +374,7 @@ Zcam.prototype.downloadFileThumbnail = function(filename, path, callback){
 Zcam.prototype.getFileThumbnailStream = function(filename, callback){
   if(typeof filename==='function'){
     callback = filename;
-    return callback("you must specified a filename");
+    return callback("you must specify a filename");
   }
 
   callback(null,request.get({url:this.endpoints.filesManager + filename + "? act=thm"}));
@@ -308,7 +385,7 @@ Zcam.prototype.getFileThumbnailStream = function(filename, callback){
 Zcam.prototype.downloadFileScreennail = function(filename, path, callback){
   if(typeof filename==='function'){
     callback = filename;
-    return callback("you must specified a filename");
+    return callback("you must specify a filename");
   }
   if(typeof path==='function'){
     callback = path;
@@ -330,7 +407,7 @@ Zcam.prototype.downloadFileScreennail = function(filename, path, callback){
 Zcam.prototype.getFileScreennailStream = function(filename, callback){
   if(typeof filename==='function'){
     callback = filename;
-    return callback("you must specified a filename");
+    return callback("you must specify a filename");
   }
 
   callback(null,request.get({url:this.endpoints.filesManager + filename + "? act=scr"}));
@@ -341,7 +418,7 @@ Zcam.prototype.getFileScreennailStream = function(filename, callback){
 Zcam.prototype.getFileCreationDate = function(filename,callback){
   if(typeof filename==='function'){
     callback = filename;
-    return callback("you must specified a filename");
+    return callback("you must specify a filename");
   }
   request.get({url:this.endpoints.filesManager + filename + "?act=ct", json:true}, function (error, response, body) {
     if(error) return callback(error);
@@ -357,7 +434,7 @@ Zcam.prototype.getFileCreationDate = function(filename,callback){
 Zcam.prototype.getFileMD5= function(filename,callback){
   if(typeof filename==='function'){
     callback = filename;
-    return callback("you must specified a filename");
+    return callback("you must specify a filename");
   }
   request.get({url:this.endpoints.filesManager + filename + "?act=md5", json:true}, function (error, response, body) {
     if(error) return callback(error);
@@ -443,14 +520,219 @@ Zcam.prototype.getRemainingRecordingTime = function(callback){
     if(error) return callback(error);
     if(body.code!== 0) return callback(formatError(body));
 
-    var file=body.msg;
+    var time=body.msg;
 
-    callback(null,file);
+    callback(null,time);
   }.bind(this));
 }
+
+// retrieve a setting by it's key name (view VALID_SETTINGS for more info)
+Zcam.prototype.getSetting = function(settingName, callback){
+  if(typeof settingName==='function'){
+    callback = settingName;
+    return callback("you must specify a filename");
+  }
+  request.get({url:this.endpoints.setting + "/get?k="+settingName, json:true}, function (error, response, body) {
+    if(error) return callback(error);
+    if(bodycode!== 0) return callback(formatError(body));
+
+    var setting=body.value;
+
+    callback(null,time);
+  }.bind(this));
+};
+
+// get an object containing all settings and their values
+Zcam.prototype.getAllSettings = function(callback){
+  var getSettingPromises = []
+  for(i in Zcam.VALID_SETTINGS){
+    getSettingPromisified = util.promisify(this.getSetting);
+    getSettingPromise = getSettingPromisified.bind(this)();
+    getSettingPromises.push(getSettingPromise);
+  }
+
+  Promise.all(getSettingPromises).then(function(values){
+    var settings = {};
+    for(var i in values){
+      settings.VALID_SETTINGS[i]=values[i];
+    }
+    callback(null,settings);
+  }).catch(function(err){
+    callback(err);
+  });
+}
+
+// retrieve a setting information by it's key name (view VALID_SETTINGS for more info)
+Zcam.prototype.getSettingInfo = function(settingName, callback){
+  if(typeof settingName==='function'){
+    callback = settingName;
+    return callback("you must specify a filename");
+  }
+  request.get({url:this.endpoints.setting + "/get?k="+settingName, json:true}, function (error, response, body) {
+    if(error) return callback(error);
+    if(body.code!== 0) return callback(formatError(body));
+
+    var type,options,min,max,step;
+    switch (body.type) {
+      case 0:
+        type = "range";
+        min = body.min;
+        max = body.max;
+        step = body.step;
+        break;
+      case 1:
+        type = "options"
+        options = body.opts;
+        break;
+      case 2:
+        type = "string"
+        break;
+      default:
+    }
+
+    var settingInfo={
+      description :body.desc,
+      type :type,
+      readonly:(body.ro?true:false),
+      options :options,
+      min : min,
+      max : max,
+      step : step,
+    }
+
+    callback(null,settingInfo);
+  }.bind(this));
+};
+
+
+// get an object containing all settings info
+Zcam.prototype.dumpSettings = function(callback){
+  var getSettingInfoPromises = []
+  for(i in Zcam.VALID_SETTINGS){
+    getSettingInfoPromisified = util.promisify(this.getSettingInfo);
+    getSettingInfoPromise = getSettingInfoPromisified.bind(this)();
+    getSettingInfoPromises.push(getSettingInfoPromise);
+  }
+
+  Promise.all(getSettingInfoPromises).then(function(settingsInfo){
+    callback(null, settingsInfo);
+  }).catch(function(err){
+    callback(err);
+  });
+}
+
+// set a setting by it's key name (view VALID_SETTINGS for more info)
+Zcam.prototype.setSetting = function(settingName, value, callback){
+  if(typeof settingName==='function'){
+    callback = settingName;
+    return callback("you must specify a setting name");
+  }
+  if(typeof value==='function'){
+    callback = settingName;
+    return callback("you must specify a value for the setting");
+  }
+  request.get({url:this.endpoints.setting + "/set?"+settingName+"="+value, json:true}, function (error, response, body) {
+    if(error) return callback(error);
+    if(bodycode!== 0) return callback(formatError(body));
+
+    callback(null);
+  }.bind(this));
+};
+
+// restore all settings
+Zcam.prototype.clearSettings = function(settingName,callback){
+  if(typeof settingName==='function'){
+    callback = settingName;
+    return callback("you must specify a setting name");
+  }
+  request.get({url:this.endpoints.setting + "/set?action=clear", json:true}, function (error, response, body) {
+    if(error) return callback(error);
+    if(bodycode!== 0) return callback(formatError(body));
+
+    callback(null);
+  }.bind(this));
+};
+
+// set AutoFocus zone determined by a rectangle of max 16bits of with
+Zcam.prototype.setAutofocusZone = function(xstart,ystart,xstop,ystop,callback){
+  if(typeof xstart==='function' || typeof ystart==='function' || typeof xstop==='function' || typeof ystop==='function'){
+    callback = settingName;
+    return callback("you must specify 2 set of coordinates (xstart,ystart,xstop,ystop)");
+  }
+  if(xstart < 0 || xstart >16 || xstop < 0 || xstop >16 || ystart < 0 || ystart >16 || ystop < 0 || ystop >16 ){
+    return callback("wrong dimensions");
+  }
+  if(xstart>=xstop){
+    return callback("xstart is higher than xstop");
+  }
+  if(ystart>=ystop){
+    return callback("ystart is higher than ystop");
+  }
+
+  var x = ( Math.pow(2,xstop - xstart + 1 ) - 1 ) << xstart;
+  var y = ( Math.pow(2,ystop - ystart + 1 ) - 1 ) << ystart
+  var index = x<<16 | y;
+
+  request.get({url:this.endpoints.af + "?pos="+index, json:true}, function (error, response, body) {
+    if(error) return callback(error);
+    if(bodycode!== 0) return callback(formatError(body));
+
+    callback(null);
+  }.bind(this));
+};
+
+// enable Magnify
+Zcam.prototype.enableMagnify = function(settingName,callback){
+  if(typeof settingName==='function'){
+    callback = settingName;
+    return callback("you must specify a setting name");
+  }
+  request.get({url:this.endpoints.magnify + "?action=enable", json:true}, function (error, response, body) {
+    if(error) return callback(error);
+    if(bodycode!== 0) return callback(formatError(body));
+
+    callback(null);
+  }.bind(this));
+};
+
+// disable Magnify
+Zcam.prototype.disableMagnify = function(settingName,callback){
+  if(typeof settingName==='function'){
+    callback = settingName;
+    return callback("you must specify a setting name");
+  }
+  request.get({url:this.endpoints.magnify + "?action=disable", json:true}, function (error, response, body) {
+    if(error) return callback(error);
+    if(bodycode!== 0) return callback(formatError(body));
+
+    callback(null);
+  }.bind(this));
+};
+
+
+// set Magnify zone determined by a rectangle of max 16bits of with
+Zcam.prototype.setMagnifyZone = function(xpercent,ypercent,callback){
+  if(typeof xstart==='function' || typeof ystart==='function' || typeof xstop==='function' || typeof ystop==='function'){
+    callback = settingName;
+    return callback("you must specify 2 set of coordinates (xstart,ystart,xstop,ystop)");
+  }
+
+
+  var index = xpercent<<16 | ypercent;
+
+  request.get({url:this.endpoints.magnify + "?pos="+index, json:true}, function (error, response, body) {
+    if(error) return callback(error);
+    if(bodycode!== 0) return callback(formatError(body));
+
+    callback(null);
+  }.bind(this));
+};
+
+
 
 function formatError(body){
   return body.code + ' : ' + body.msg + ' [' + body.desc + ']';
 }
 
+Zcam.VALID_SETTINGS = VALID_SETTINGS;
 module.exports = Zcam;
