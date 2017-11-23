@@ -106,6 +106,7 @@ function Zcam(options){
   this.endpoints.setting = this.endpoints.root + '/ctrl';
   this.endpoints.af = this.endpoints.root + '/ctrl/af';
   this.endpoints.magnify = this.endpoints.root + '/ctrl/mag';
+  this.endpoints.sdcard = this.endpoints.root + '/ctrl/card';
 
 }
 
@@ -710,19 +711,62 @@ Zcam.prototype.disableMagnify = function(settingName,callback){
 };
 
 
-// set Magnify zone determined by a rectangle of max 16bits of with
+// set Magnify zone determined by a percentage in x and y
 Zcam.prototype.setMagnifyZone = function(xpercent,ypercent,callback){
-  if(typeof xstart==='function' || typeof ystart==='function' || typeof xstop==='function' || typeof ystop==='function'){
+  if(typeof xpercent==='function' || typeof ypercent==='function'){
     callback = settingName;
-    return callback("you must specify 2 set of coordinates (xstart,ystart,xstop,ystop)");
+    return callback("you must specify a percentage in x and y.");
   }
 
+  if(xpercent < 0 || xpercent >1000 || ypercent < 0 || ypercent >1000 ){
+    return callback("wrong dimensions");
+  }
 
   var index = xpercent<<16 | ypercent;
 
   request.get({url:this.endpoints.magnify + "?pos="+index, json:true}, function (error, response, body) {
     if(error) return callback(error);
     if(bodycode!== 0) return callback(formatError(body));
+
+    callback(null);
+  }.bind(this));
+};
+
+// forrmat card to default format (FAT32)
+Zcam.prototype.formatSDCard = function(callback){
+  request.get({url:this.endpoints.sdcard + "?action=format", json:true}, function (error, response, body) {
+    if(error) return callback(error);
+    if(body.code!== 0) return callback(formatError(body));
+
+    callback(null);
+  }.bind(this));
+};
+
+// check if SD card is present
+Zcam.prototype.checkSDCardPresence = function(callback){
+  request.get({url:this.endpoints.sdcard + "?action=present", json:true}, function (error, response, body) {
+    if(error) return callback(error);
+    if(body.code!== 0) return callback(formatError(body));
+
+    callback(null,body.msg);
+  }.bind(this));
+};
+
+// forrmat card to FAT32
+Zcam.prototype.formatSDCardToFAT32 = function(callback){
+  request.get({url:this.endpoints.sdcard + "?action=fat32", json:true}, function (error, response, body) {
+    if(error) return callback(error);
+    if(body.code!== 0) return callback(formatError(body));
+
+    callback(null);
+  }.bind(this));
+};
+
+// forrmat card to exFAT
+Zcam.prototype.formatSDCardToexFAT = function(callback){
+  request.get({url:this.endpoints.sdcard + "?action=exfat", json:true}, function (error, response, body) {
+    if(error) return callback(error);
+    if(body.code!== 0) return callback(formatError(body));
 
     callback(null);
   }.bind(this));
