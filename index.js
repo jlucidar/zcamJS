@@ -77,7 +77,7 @@ var VALID_SETTINGS=[
   'focus_area', // Af area
   'level_correction',
   'WIFI_MODE', //switch wifi mode in ap/sta]
-],
+];
 
 function Zcam(options){
   options = options || {};
@@ -773,6 +773,32 @@ Zcam.prototype.formatSDCardToexFAT = function(callback){
 };
 
 
+//STREAMING INTERFACE
+
+
+Zcam.prototype.initStreaming = function(listener, callback){
+  if(!this.socket){
+    this.socket = new net.Socket();
+    this.socket.connect(this.streamingPort,this.ip,function(){
+      callback(null);
+    }.bind(this));
+    this.socket.on('data',function(data){
+      listener(data);
+    });
+    this.socket.on('close',function(){
+      this.socket=undefined;
+    });
+  } else {
+    return callback("socket already opened !");
+  }
+};
+
+Zcam.prototype.requestFrame = function(callback){
+  if(!this.socket){
+    return callback('init callback first !');
+  }
+    this.socket.write(Buffer.from([0x01]));
+};
 
 function formatError(body){
   return body.code + ' : ' + body.msg + ' [' + body.desc + ']';

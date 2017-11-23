@@ -14,3 +14,8 @@ zcam.stopSession(console.log);
 zcam.setDate(console.log);
 
 zcam.getMode(console.log);
+
+var listener = console.log
+zcam.initStreaming(listener,function(){
+  setInterval(zcam.requestFrame.bind(zcam),1000);
+});
