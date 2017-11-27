@@ -782,8 +782,23 @@ Zcam.prototype.initStreaming = function(listener, callback){
     this.socket.connect(this.streamingPort,this.ip,function(){
       callback(null);
     }.bind(this));
+    next_frame_length=-1;
+    var buf  = Buffer.alloc(0);;
     this.socket.on('data',function(data){
-      listener(data);
+      if(data.length === 4){
+        //console.log(data, data.readUInt32BE(0));
+        next_frame_length = data.readUInt32BE(0);
+        buf = Buffer.alloc(0);
+      }else {
+        //console.log(data.length);
+        buf = Buffer.concat([buf,data],buf.length+data.length);
+        if( buf.length === next_frame_length){
+          next_frame_length = -1;
+          listener(buf);
+        }
+      }
+
+
     });
     this.socket.on('close',function(){
       this.socket=undefined;
