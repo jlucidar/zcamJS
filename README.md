@@ -56,7 +56,7 @@ get General Information about the camera (model, hardware and software version, 
 
 -   `callback` **[getInfoCallback](#getinfocallback)**
 
-## getInfoCallback
+#### getInfoCallback
 
 Type: [Function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)
 
@@ -84,7 +84,7 @@ return the temperature in degree Celsius
 
 -   `callback` **[getTemperatureCallback](#gettemperaturecallback)**
 
-## getTemperatureCallback
+#### getTemperatureCallback
 
 Type: [Function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)
 
@@ -109,7 +109,7 @@ get the number of pictures taken during a timelapse Session
 
 -   `callback` **[getTimelapsePictureCountCallback](#gettimelapsepicturecountcallback)**
 
-## getTimelapsePictureCountCallback
+#### getTimelapsePictureCountCallback
 
 Type: [Function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)
 
@@ -134,7 +134,7 @@ lock a session (don't allow other people to control the cam) or do a heartbeat
 
 -   `callback` **[startSessionCallback](#startsessioncallback)**
 
-## startSessionCallback
+#### startSessionCallback
 
 Type: [Function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)
 
