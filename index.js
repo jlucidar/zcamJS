@@ -1,9 +1,33 @@
+/**
+ * @module ZcamJS
+ * @desc ZcamJS a node.js library for interacting with the Zcam S1 / Zcam S1 Pro cameras.
+ *
+ * this library provide a Zcam object you can use to :
+ * - retrieve camera information
+ * - get or set camera settings
+ * - get or change camera operation mode
+ * - download or get info from files
+ * - upload the firmware and update the camera
+ * - format SD Card
+ * - get a live preview of the camera
+ * - get a live full resolution stream from the camera (NOT IMPLEMENTED YET)
+ *
+ * See {@link http://github.com/imaginevision/Z-Camera-Doc|Zcam official documentation} for further information.
+ *  @author jlucidar
+ *  @license MIT
+ *  @version 1.0.0
+*/
+
 var request = require('request');
 var net = require('net');
 var fs = require('fs');
 var util = require('util');
-var muxjs = require('mux.js');
 
+/** @constant
+*  @desc this is the array containing all settings parameters
+*  @type {string[]}
+*  @private
+*/
 var VALID_SETTINGS=[
   'ssid', // string type, set Wi-Fi SSID
   'ap_key', // string type, set Wi-Fi passwd
@@ -80,52 +104,97 @@ var VALID_SETTINGS=[
   'WIFI_MODE', //switch wifi mode in ap/sta]
 ];
 
+/** @constant
+ *  @desc this is the request buffer to get a video frame
+ *  @type {Buffer}
+ *  @private
+*/
 var STREAMING_REQUEST_BUFFER = Buffer.from([0x01]);
 
+/**
+* Create a new Zcam instance.
+* @constructor
+* @desc a Zcam instance refer only one camera module. you need to initialise 4 of them for a Zcam S1.
+* @param {Object} [options] - the options for the Zcam instance.
+* @param {string} [options.ip='10.92.32.1'] - the ip address of the Zcam camera.
+* @param {string} [options.port='80'] - the port used for the control interface
+* @param {string} [options.previewStreamingPort='9876'] - the port used for preview streaming
+* @param {string} [options.DCIMFolder='100MEDIA'] - the DCIM folder used by the camera.
+
+* @example var zcam1 = new Zcam({ip:'10.92.32.1'});
+*/
 function Zcam(options){
   options = options || {};
 
   this.ip = options.ip || '10.98.32.1';
   this.port = options.port || '80';
-  this.streamingPort = options.streamingPort || 9876;
+  this.previewStreamingPort = options.previewStreamingPort || 9876;
   this.DCIMFolder = options.DCIMFolder || '100MEDIA';
 
-  this.endpoints = {};
-  this.endpoints.root = 'http://' + this.ip + ':' + this.port;
-  this.endpoints.info = this.endpoints.root + '/info';
-  this.endpoints.temperature = this.endpoints.root + '/ctrl/temperature';
-  this.endpoints.timelapsePictureCount = this.endpoints.root + '/ctrl/timelapse_stat';
-  this.endpoints.session = this.endpoints.root + '/ctrl/session';
-  this.endpoints.uploadFirmware = this.endpoints.root + '/uploadfirmware';
-  this.endpoints.upgrade = this.endpoints.root + '/ctrl/upgrade';
-  this.endpoints.shutdown = this.endpoints.root + '/ctrl/shutdown';
-  this.endpoints.reboot = this.endpoints.root + '/ctrl/reboot';
-  this.endpoints.datetime = this.endpoints.root + '/datetime';
-  this.endpoints.mode = this.endpoints.root + '/ctrl/mode';
-  this.endpoints.listDCIMFolders = this.endpoints.root + '/DCIM';
-  this.endpoints.filesManager = this.endpoints.root + '/DCIM/'+ this.DCIMFolder + '';
-  this.endpoints.still = this.endpoints.root + '/ctrl/still';
-  this.endpoints.movie = this.endpoints.root + '/ctrl/rec';
-  this.endpoints.setting = this.endpoints.root + '/ctrl';
-  this.endpoints.af = this.endpoints.root + '/ctrl/af';
-  this.endpoints.magnify = this.endpoints.root + '/ctrl/mag';
-  this.endpoints.sdcard = this.endpoints.root + '/ctrl/card';
+  var root =  'http://' + this.ip + ':' + this.port;
+  this.endpoints = {
+    root:root,
+    info : root + '/info',
+    temperature : root + '/ctrl/temperature',
+    timelapsePictureCount : root + '/ctrl/timelapse_stat',
+    session : root + '/ctrl/session',
+    uploadFirmware : root + '/uploadfirmware',
+    upgrade : root + '/ctrl/upgrade',
+    shutdown : root + '/ctrl/shutdown',
+    reboot : root + '/ctrl/reboot',
+    datetime : root + '/datetime',
+    mode : root + '/ctrl/mode',
+    listDCIMFolders : root + '/DCIM',
+    filesManager : root + '/DCIM/'+ this.DCIMFolder + '',
+    still : root + '/ctrl/still',
+    movie : root + '/ctrl/rec',
+    setting : root + '/ctrl',
+    af : root + '/ctrl/af',
+    magnify : root + '/ctrl/mag',
+    sdcard : root + '/ctrl/card'
+  };
 
 }
 
-//get General Information about the camera (model, hardware and software version, serial number, bluetooth mac address, etc...)
+/** @function getInfo
+ *  @desc get General Information about the camera (model, hardware and software version, serial number, bluetooth mac address, etc...)
+    @param {getInfoCallback} callback
+*/
+
+/**
+ *  @callback getInfoCallback
+ *  @param {string} error - contains the error message (null if none)
+ *  @param {Object} info - info Object
+ *  @param {string} info.model - model of the camera
+ *  @param {string} info.sw - software version
+ *  @param {string} info.hw - hardware version
+ *  @example zcam1.getInfo(function(err,info){
+      //use camera info here
+    });
+*/
 Zcam.prototype.getInfo = function(callback){
   request.get({url:this.endpoints.info, json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     this.info = body;
     callback(null,this);
   }.bind(this));
 };
 
 
-//return the temperqture in degree Celsius
+/** @function getTemperature
+ *  @desc return the temperature in degree Celsius
+    @param {getTemperatureCallback} callback
+*/
+/**
+ *  @callback getTemperatureCallback
+ *  @param {string} error - contains the error message (null if none)
+ *  @param {number} temperature - temperature in degree Celsius
+ *  @example zcam1.getTemperature(function(err,temperature){
+      //use temperature here
+    });
+*/
 Zcam.prototype.getTemperature = function(callback){
   request.get({url:this.endpoints.temperature, json:true}, function (error, response, body) {
     if (error) {
@@ -141,15 +210,26 @@ Zcam.prototype.getTemperature = function(callback){
   }.bind(this));
 };
 
-// get the number of pictures taken during a timelapse Session
+/** @function getTimelapsePictureCount
+ *  @desc get the number of pictures taken during a timelapse Session
+    @param {getTimelapsePictureCountCallback} callback
+*/
+/**
+ *  @callback getTimelapsePictureCountCallback
+ *  @param {string} error - contains the error message (null if none)
+ *  @param {number} timelapsePictureCount - number of pictures taken during the timelapse
+ *  @example zcam1.getTimelapsePictureCount(function(err,timelapsePictureCount){
+      //use timelapsePictureCount here
+    });
+*/
 Zcam.prototype.getTimelapsePictureCount = function(callback){
   request.get({url:this.endpoints.timelapsePictureCount, json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     timelapsePictureCount = body.msg;
 
@@ -157,15 +237,24 @@ return callback(formatError(body));
   }.bind(this));
 };
 
-// lock a session (don't allow other people to control the cam) or do a heartbeat
+/** @function startSession
+ *  @desc lock a session (don't allow other people to control the cam) or do a heartbeat
+    @param {startSessionCallback} callback
+*/
+/** @callback startSessionCallback
+ *  @param {string} error - contains the error message (null if none)
+ *  @example zcam1.startSession(function(err){
+      //session started
+    });
+*/
 Zcam.prototype.startSession = function(callback){
   request.get({url:this.endpoints.session, json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null);
   }.bind(this));
@@ -176,11 +265,11 @@ return callback(formatError(body));
 Zcam.prototype.stopSession = function(callback){
   request.get({url:this.endpoints.session + '?action=quit', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null);
   }.bind(this));
@@ -190,11 +279,11 @@ return callback(formatError(body));
 Zcam.prototype.uploadFirmware = function(firmwarePath,callback){
   fs.createReadStream(firmwarePath).pipe(request.post({url:this.endpoints.uploadFirmware, json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null);
   }.bind(this)).bind(this));
@@ -204,11 +293,11 @@ return callback(formatError(body));
 Zcam.prototype.upgradeFirmware = function(callback){
   request.get({url:this.endpoints.upgrade + '?action=run', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null);
   }.bind(this));
@@ -218,11 +307,11 @@ return callback(formatError(body));
 Zcam.prototype.shutdown = function(callback){
   request.get({url:this.endpoints.shutdown, json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null);
   }.bind(this));
@@ -232,11 +321,11 @@ return callback(formatError(body));
 Zcam.prototype.reboot = function(callback){
   request.get({url:this.endpoints.reboot, json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null);
   }.bind(this));
@@ -248,16 +337,16 @@ Zcam.prototype.setDate = function(date, callback){
     callback = date;
     date = new Date();
   }
-    var day = date.toISOString().substring(0, 10);
-    var time = date.toISOString().substring(11, 19);
+  var day = date.toISOString().substring(0, 10);
+  var time = date.toISOString().substring(11, 19);
 
   request.get({url:this.endpoints.datetime + '?date='+ day +'&time='+ time +'', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null);
   }.bind(this));
@@ -267,11 +356,11 @@ return callback(formatError(body));
 Zcam.prototype.getMode = function(callback){
   request.get({url:this.endpoints.mode + '?action=query', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null);
   }.bind(this));
@@ -282,25 +371,25 @@ Zcam.prototype.switchToMode = function(mode, callback){
   var action;
   switch (mode) {
     case 'playback':
-        action = 'to_pb';
-      break;
+    action = 'to_pb';
+    break;
     case 'still':
-        action = 'to_cap';
-      break;
+    action = 'to_cap';
+    break;
     case 'movie':
-        action = 'to_rec';
-      break;
+    action = 'to_rec';
+    break;
     default:
-      return calback('no mode specified');
+    return calback('no mode specified');
   }
 
   request.get({url:this.endpoints.mode + '?action='+action, json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null);
   }.bind(this));
@@ -310,11 +399,11 @@ return callback(formatError(body));
 Zcam.prototype.listDCIMFolders = function(callback){
   request.get({url:this.endpoints.listDCIMFolders, json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     var folders = body.files;
     callback(null,folders);
@@ -331,11 +420,11 @@ Zcam.prototype.setDCIMFolder = function(DCIMFolder,callback){
 Zcam.prototype.listFiles = function(callback){
   request.get({url:this.endpoints.filesManager + '?p=1&v=1', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     var files = body.files;
     callback(null,files);
@@ -354,13 +443,13 @@ Zcam.prototype.downloadFile = function(filename, path, callback){
   }
 
   request.get({url:this.endpoints.filesManager + filename})
-    .on('error', function(err) {
-       return callback(error);
-    })
-    .on('finish',function(){
-      return callback(null);
-    })
-    .pipe(fs.createWriteStream(path+filename));
+  .on('error', function(err) {
+    return callback(error);
+  })
+  .on('finish',function(){
+    return callback(null);
+  })
+  .pipe(fs.createWriteStream(path+filename));
 
 };
 
@@ -383,11 +472,11 @@ Zcam.prototype.deleteFile = function(filename,callback){
   }
   request.get({url:this.endpoints.filesManager + filename + '?act=rm', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null);
   }.bind(this));
@@ -401,11 +490,11 @@ Zcam.prototype.getFileInfo = function(filename,callback){
   }
   request.get({url:this.endpoints.filesManager + filename + '?act=info', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     var info=body.msg;
 
@@ -426,13 +515,13 @@ Zcam.prototype.downloadFileThumbnail = function(filename, path, callback){
   }
 
   request.get({url:this.endpoints.filesManager + filename + '?act=thm'})
-    .on('error', function(err) {
-       return callback(error);
-    })
-    .on('finish',function(){
-      return callback(null);
-    })
-    .pipe(fs.createWriteStream(path+filename));
+  .on('error', function(err) {
+    return callback(error);
+  })
+  .on('finish',function(){
+    return callback(null);
+  })
+  .pipe(fs.createWriteStream(path+filename));
 
 };
 
@@ -459,13 +548,13 @@ Zcam.prototype.downloadFileScreennail = function(filename, path, callback){
   }
 
   request.get({url:this.endpoints.filesManager + filename + '?act=scr'})
-    .on('error', function(err) {
-       return callback(error);
-    })
-    .on('finish',function(){
-      return callback(null);
-    })
-    .pipe(fs.createWriteStream(path+filename));
+  .on('error', function(err) {
+    return callback(error);
+  })
+  .on('finish',function(){
+    return callback(null);
+  })
+  .pipe(fs.createWriteStream(path+filename));
 
 };
 
@@ -488,11 +577,11 @@ Zcam.prototype.getFileCreationDate = function(filename,callback){
   }
   request.get({url:this.endpoints.filesManager + filename + '?act=ct', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     var date=new Date(body.msg*1000);
 
@@ -508,11 +597,11 @@ Zcam.prototype.getFileMD5= function(filename,callback){
   }
   request.get({url:this.endpoints.filesManager + filename + '?act=md5', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     var md5=body.msg;
 
@@ -524,11 +613,11 @@ return callback(formatError(body));
 Zcam.prototype.takePicture = function(callback){
   request.get({url:this.endpoints.stillCapture + '?action=cap', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     var file=body.msg;
 
@@ -540,11 +629,11 @@ return callback(formatError(body));
 Zcam.prototype.forceToPictureMode = function(callback){
   request.get({url:this.endpoints.stillCapture + '?action=single', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null);
   }.bind(this));
@@ -554,11 +643,11 @@ return callback(formatError(body));
 Zcam.prototype.getPictureCountLeft = function(callback){
   request.get({url:this.endpoints.stillCapture + '?action=remain', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     var pictureCountLeft=body.msg;
 
@@ -570,11 +659,11 @@ return callback(formatError(body));
 Zcam.prototype.cancelBurstMode = function(callback){
   request.get({url:this.endpoints.stillCapture + '?action=cancel_burst', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null);
   }.bind(this));
@@ -584,11 +673,11 @@ return callback(formatError(body));
 Zcam.prototype.startRecording = function(callback){
   request.get({url:this.endpoints.movie + '?action=start', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     var file=body.msg;
 
@@ -600,11 +689,11 @@ return callback(formatError(body));
 Zcam.prototype.stopRecording = function(callback){
   request.get({url:this.endpoints.movie + '?action=stop', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     var file=body.msg;
 
@@ -616,11 +705,11 @@ return callback(formatError(body));
 Zcam.prototype.getRemainingRecordingTime = function(callback){
   request.get({url:this.endpoints.movie + '?action=remain', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     var time=body.msg;
 
@@ -636,11 +725,11 @@ Zcam.prototype.getSetting = function(settingName, callback){
   }
   request.get({url:this.endpoints.setting + '/get?k='+settingName, json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     var setting=body.value;
 
@@ -658,12 +747,12 @@ Zcam.prototype.getAllSettings = function(callback){
   }
 
   function reflect(promise){
-      return promise.then(function(v){
- return v;
-},
-                          function(e){
- return e;
-});
+    return promise.then(function(v){
+      return v;
+    },
+    function(e){
+      return e;
+    });
   }
 
   Promise.all(getSettingPromises.map(reflect)).then(function(values){
@@ -673,7 +762,7 @@ Zcam.prototype.getAllSettings = function(callback){
     }
     callback(null,settings);
   }).catch(function(err){
-VALID_SETTINGS[i];
+    VALID_SETTINGS[i];
     callback(err);
   });
 };
@@ -686,27 +775,27 @@ Zcam.prototype.getSettingInfo = function(settingName, callback){
   }
   request.get({url:this.endpoints.setting + '/get?k='+settingName, json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     var type,options,min,max,step;
     switch (body.type) {
       case 0:
-        type = 'range';
-        min = body.min;
-        max = body.max;
-        step = body.step;
-        break;
+      type = 'range';
+      min = body.min;
+      max = body.max;
+      step = body.step;
+      break;
       case 1:
-        type = 'options';
-        options = body.opts;
-        break;
+      type = 'options';
+      options = body.opts;
+      break;
       case 2:
-        type = 'string';
-        break;
+      type = 'string';
+      break;
       default:
     }
 
@@ -753,11 +842,11 @@ Zcam.prototype.setSetting = function(settingName, value, callback){
   }
   request.get({url:this.endpoints.setting + '/set?'+settingName+'='+value, json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null);
   }.bind(this));
@@ -771,11 +860,11 @@ Zcam.prototype.clearSettings = function(settingName,callback){
   }
   request.get({url:this.endpoints.setting + '/set?action=clear', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null);
   }.bind(this));
@@ -803,11 +892,11 @@ Zcam.prototype.setAutofocusZone = function(xstart,ystart,xstop,ystop,callback){
 
   request.get({url:this.endpoints.af + '?pos='+index, json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null);
   }.bind(this));
@@ -821,11 +910,11 @@ Zcam.prototype.enableMagnify = function(settingName,callback){
   }
   request.get({url:this.endpoints.magnify + '?action=enable', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null);
   }.bind(this));
@@ -839,11 +928,11 @@ Zcam.prototype.disableMagnify = function(settingName,callback){
   }
   request.get({url:this.endpoints.magnify + '?action=disable', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null);
   }.bind(this));
@@ -865,11 +954,11 @@ Zcam.prototype.setMagnifyZone = function(xpercent,ypercent,callback){
 
   request.get({url:this.endpoints.magnify + '?pos='+index, json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null);
   }.bind(this));
@@ -879,11 +968,11 @@ return callback(formatError(body));
 Zcam.prototype.formatSDCard = function(callback){
   request.get({url:this.endpoints.sdcard + '?action=format', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null);
   }.bind(this));
@@ -893,11 +982,11 @@ return callback(formatError(body));
 Zcam.prototype.checkSDCardPresence = function(callback){
   request.get({url:this.endpoints.sdcard + '?action=present', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null,body.msg);
   }.bind(this));
@@ -907,11 +996,11 @@ return callback(formatError(body));
 Zcam.prototype.formatSDCardToFAT32 = function(callback){
   request.get({url:this.endpoints.sdcard + '?action=fat32', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null);
   }.bind(this));
@@ -921,32 +1010,27 @@ return callback(formatError(body));
 Zcam.prototype.formatSDCardToexFAT = function(callback){
   request.get({url:this.endpoints.sdcard + '?action=exfat', json:true}, function (error, response, body) {
     if (error) {
-return callback(error);
-}
+      return callback(error);
+    }
     if (body.code!== 0) {
-return callback(formatError(body));
-}
+      return callback(formatError(body));
+    }
 
     callback(null);
   }.bind(this));
 };
 
 
-//STREAMING INTERFACE
+//PREVIEW STREAMING INTERFACE
 
 
-Zcam.prototype.initStreaming = function(listener, callback){
+Zcam.prototype.initPreviewStreaming = function(listener, callback){
   if (this.socket){
     return callback('socket already opened !');
   }
-  this.muxer = new muxjs.mp4.Transmuxer();
-  this.muxer.init();
-  this.muxer.on( 'data', function(seg){
-    console.log( seg );
-  });
 
   this.socket = new net.Socket();
-  this.socket.connect(this.streamingPort,this.ip,function(){
+  this.socket.connect(this.previewStreamingPort,this.ip,function(){
     callback(null);
   }.bind(this));
   var nextFrameLength=-1;
@@ -959,19 +1043,18 @@ Zcam.prototype.initStreaming = function(listener, callback){
       listener(buf);
       nextFrameLength = data.readUInt32BE(0);
       buf = Buffer.alloc(0);
-      //this.requestFrame();
+      //this.requestPreviewFrame();
     } else if (nextFrameLength!==-1){
       buf = Buffer.concat([buf,data],buf.length+data.length);
       if ( buf.length === nextFrameLength){
         //console.log('received frame : '+ buf.length);
-        //this.muxer.push(buf);
       } else {
-        this.requestFrame();
+        this.requestPreviewFrame();
       }
     } else {
       console.log('weird stuff : ');
       console.log(buf, data);
-      this.requestFrame();
+      this.requestPreviewFrame();
     }
 
   }.bind(this));
@@ -980,11 +1063,11 @@ Zcam.prototype.initStreaming = function(listener, callback){
   });
 };
 
-Zcam.prototype.requestFrame = function(callback){
+Zcam.prototype.requestPreviewFrame = function(callback){
   if (!this.socket){
     return callback('init callback first !');
   }
-    this.socket.write(STREAMING_REQUEST_BUFFER);
+  this.socket.write(STREAMING_REQUEST_BUFFER);
 };
 
 function formatError(body){
