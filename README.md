@@ -28,6 +28,17 @@ See [Zcam official documentation](http://github.com/imaginevision/Z-Camera-Doc) 
 -   [getTemperature](#gettemperature)
 -   [getTimelapsePictureCount](#gettimelapsepicturecount)
 -   [startSession](#startsession)
+-   [stopSession](#stopsession)
+-   [uploadFirmware](#uploadfirmware)
+-   [upgradeFirmware](#upgradefirmware)
+-   [shutdown](#shutdown)
+-   [reboot](#reboot)
+-   [setDate](#setdate)
+-   [getMode](#getmode)
+-   [switchToMode](#switchtomode)
+-   [listDCIMFolders](#listdcimfolders)
+-   [setDCIMFolder](#setdcimfolder)
+-   [listFiles](#listfiles)
 
 
 ## Zcam
@@ -147,5 +158,276 @@ Type: [Function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Referen
 ```javascript
 zcam1.startSession(function(err){
 //session started
+});
+```
+
+## stopSession
+
+unlock the session (allow other people to control the cam)
+
+**Parameters**
+
+-   `callback` **[stopSessionCallback](#stopsessioncallback)**
+
+#### stopSessionCallback
+
+Type: [Function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)
+
+**Parameters**
+
+-   `error` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** contains the error message (null if none)
+
+**Examples**
+
+```javascript
+zcam1.stopSession(function(err){
+//session stopped
+});
+```
+
+## uploadFirmware
+
+upload a new firmware to the camera
+
+**Parameters**
+
+-   `firmwarePath` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** the path to the new camera firmware
+-   `callback` **[uploadFirmwareCallback](#uploadfirmwarecallback)**
+
+#### uploadFirmwareCallback
+
+Type: [Function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)
+
+**Parameters**
+
+-   `error` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** contains the error message (null if none)
+
+**Examples**
+
+```javascript
+zcam1.uploadFirmware(firmwarePath,function(err){
+//firmware uploaded
+});
+```
+
+## upgradeFirmware
+
+upgrade Camera's firmware. you need to upload it first
+
+**Parameters**
+
+-   `callback` **[upgradeFirmwareCallback](#upgradefirmwarecallback)**
+
+#### upgradeFirmwareCallback
+
+Type: [Function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)
+
+**Parameters**
+
+-   `error` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** contains the error message (null if none)
+
+**Examples**
+
+```javascript
+zcam1.upgradeFirmware(function(err){
+//firmware upgraded
+});
+```
+
+## shutdown
+
+Shutdown the camera
+
+**Parameters**
+
+-   `callback` **[shutdownCallback](#shutdowncallback)**
+
+#### shutdownCallback
+
+Type: [Function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)
+
+**Parameters**
+
+-   `error` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** contains the error message (null if none)
+
+**Examples**
+
+```javascript
+zcam1.shutdown(function(err){
+//camera is shutting down
+});
+```
+
+## reboot
+
+Reboot the camera
+
+**Parameters**
+
+-   `callback` **[rebootCallback](#rebootcallback)**
+
+#### rebootCallback
+
+Type: [Function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)
+
+**Parameters**
+
+-   `error` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** contains the error message (null if none)
+
+**Examples**
+
+```javascript
+zcam1.reboot(function(err){
+//camera is rebooting
+});
+```
+
+## setDate
+
+set camera's Date and Time. will set to system time if no date specified.
+
+**Parameters**
+
+-   `date` **[Date](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date)** the date used to set up camera's date. (optional, default `Date.now()`)
+-   `callback` **[setDateCallback](#setdatecallback)**
+
+#### setDateCallback
+
+Type: [Function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)
+
+**Parameters**
+
+-   `error` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** contains the error message (null if none)
+
+**Examples**
+
+```javascript
+zcam1.setDate(date,function(err){
+//date is set
+});
+```
+
+## getMode
+
+get the current camera mode
+
+**Parameters**
+
+-   `callback` **[getModeCallback](#getmodecallback)**
+
+#### getModeCallback
+
+Type: [Function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)
+
+**Parameters**
+
+-   `error` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** contains the error message (null if none)
+-   `mode` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** the current camera mode ('pb' | 'pb_ing' | 'pb_paused' | 'cap' | 'cap_tl_ing' | 'cap_tl_idle' | 'cap_idle' | 'cap_burst' | 'rec' | 'rec_ing' | 'unknown')
+
+**Examples**
+
+```javascript
+zcam1.getMode(function(err,mode){
+//use mode here
+});
+```
+
+## switchToMode
+
+switch the camera to another mode. possible values for mode are playback, still or movie
+
+**Parameters**
+
+-   `mode` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** the mode to switch to. ('playback' | 'still' | 'movie')
+-   `callback` **[switchToModeCallback](#switchtomodecallback)**
+
+#### switchToModeCallback
+
+Type: [Function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)
+
+**Parameters**
+
+-   `error` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** contains the error message (null if none)
+
+**Examples**
+
+```javascript
+zcam1.switchToMode(function(err){
+//new mode is set
+});
+```
+
+## listDCIMFolders
+
+list the folders in the DCIM directory
+
+**Parameters**
+
+-   `callback` **[listDCIMFoldersCallback](#listdcimfolderscallback)**
+
+#### listDCIMFoldersCallback
+
+Type: [Function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)
+
+**Parameters**
+
+-   `error` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** contains the error message (null if none)
+-   `folders` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)>** the list of folders
+
+**Examples**
+
+```javascript
+zcam1.listDCIMFolders(function(err,folders){
+//use folders here
+});
+```
+
+## setDCIMFolder
+
+set the fileManager to work in an other DCIM directory
+
+**Parameters**
+
+-   `DCIMFolder` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** the DCIM folder to switch to .
+-   `callback` **[setDCIMFolderCallback](#setdcimfoldercallback)**
+
+#### setDCIMFolderCallback
+
+Type: [Function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)
+
+**Parameters**
+
+-   `error` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** contains the error message (null if none)
+
+**Examples**
+
+```javascript
+zcam1.setDCIMFolder(function(err){
+//new DCIM folder is set.
+});
+```
+
+## listFiles
+
+list files in the working directory
+
+**Parameters**
+
+-   `callback` **[listFilesCallback](#listfilescallback)**
+
+#### listFilesCallback
+
+Type: [Function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/function)
+
+**Parameters**
+
+-   `error` **[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)** contains the error message (null if none)
+-   `files` **[Array](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array)&lt;[string](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String)>** the list of files in the working directory
+
+**Examples**
+
+```javascript
+zcam1.listFiles(function(err,folders){
+//use files here
 });
 ```

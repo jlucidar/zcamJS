@@ -261,7 +261,16 @@ Zcam.prototype.startSession = function(callback){
 };
 
 
-// unlock the session
+/** @function stopSession
+ *  @desc unlock the session (allow other people to control the cam)
+    @param {stopSessionCallback} callback
+*/
+/** @callback stopSessionCallback
+ *  @param {string} error - contains the error message (null if none)
+ *  @example zcam1.stopSession(function(err){
+      //session stopped
+    });
+*/
 Zcam.prototype.stopSession = function(callback){
   request.get({url:this.endpoints.session + '?action=quit', json:true}, function (error, response, body) {
     if (error) {
@@ -275,7 +284,17 @@ Zcam.prototype.stopSession = function(callback){
   }.bind(this));
 };
 
-// upload a new firmware to the camera
+/** @function uploadFirmware
+ *  @desc upload a new firmware to the camera
+    @param {string} firmwarePath the path to the new camera firmware
+    @param {uploadFirmwareCallback} callback
+*/
+/** @callback uploadFirmwareCallback
+ *  @param {string} error - contains the error message (null if none)
+ *  @example zcam1.uploadFirmware(firmwarePath,function(err){
+      //firmware uploaded
+    });
+*/
 Zcam.prototype.uploadFirmware = function(firmwarePath,callback){
   fs.createReadStream(firmwarePath).pipe(request.post({url:this.endpoints.uploadFirmware, json:true}, function (error, response, body) {
     if (error) {
@@ -289,7 +308,16 @@ Zcam.prototype.uploadFirmware = function(firmwarePath,callback){
   }.bind(this)).bind(this));
 };
 
-// upgrade Camera's firmware. you need to upload it first
+/** @function upgradeFirmware
+ *  @desc upgrade Camera's firmware. you need to upload it first
+    @param {upgradeFirmwareCallback} callback
+*/
+/** @callback upgradeFirmwareCallback
+ *  @param {string} error - contains the error message (null if none)
+ *  @example zcam1.upgradeFirmware(function(err){
+      //firmware upgraded
+    });
+*/
 Zcam.prototype.upgradeFirmware = function(callback){
   request.get({url:this.endpoints.upgrade + '?action=run', json:true}, function (error, response, body) {
     if (error) {
@@ -303,7 +331,16 @@ Zcam.prototype.upgradeFirmware = function(callback){
   }.bind(this));
 };
 
-// Shutdown the camera
+/** @function shutdown
+ *  @desc Shutdown the camera
+    @param {shutdownCallback} callback
+*/
+/** @callback shutdownCallback
+ *  @param {string} error - contains the error message (null if none)
+ *  @example zcam1.shutdown(function(err){
+      //camera is shutting down
+    });
+*/
 Zcam.prototype.shutdown = function(callback){
   request.get({url:this.endpoints.shutdown, json:true}, function (error, response, body) {
     if (error) {
@@ -317,7 +354,16 @@ Zcam.prototype.shutdown = function(callback){
   }.bind(this));
 };
 
-// Reboot the camera
+/** @function reboot
+ *  @desc Reboot the camera
+    @param {rebootCallback} callback
+*/
+/** @callback rebootCallback
+ *  @param {string} error - contains the error message (null if none)
+ *  @example zcam1.reboot(function(err){
+      //camera is rebooting
+    });
+*/
 Zcam.prototype.reboot = function(callback){
   request.get({url:this.endpoints.reboot, json:true}, function (error, response, body) {
     if (error) {
@@ -331,7 +377,17 @@ Zcam.prototype.reboot = function(callback){
   }.bind(this));
 };
 
-// set Date and Time. arg date is of type Date. will set to system time if no date specified.
+/** @function setDate
+ *  @desc  set camera's Date and Time. will set to system time if no date specified.
+    @param {Date}[date=Date.now()] the date used to set up camera's date.
+    @param {setDateCallback} callback
+*/
+/** @callback setDateCallback
+ *  @param {string} error - contains the error message (null if none)
+ *  @example zcam1.setDate(date,function(err){
+      //date is set
+    });
+*/
 Zcam.prototype.setDate = function(date, callback){
   if (typeof date === 'function'){
     callback = date;
@@ -352,7 +408,18 @@ Zcam.prototype.setDate = function(date, callback){
   }.bind(this));
 };
 
-// get the current camera mode
+/** @function getMode
+ *  @desc get the current camera mode
+    @param {getModeCallback} callback
+*/
+/**
+ *  @callback getModeCallback
+ *  @param {string} error - contains the error message (null if none)
+ *  @param {string} mode - the current camera mode ('pb' | 'pb_ing' | 'pb_paused' | 'cap' | 'cap_tl_ing' | 'cap_tl_idle' | 'cap_idle' | 'cap_burst' | 'rec' | 'rec_ing' | 'unknown')
+ *  @example zcam1.getMode(function(err,mode){
+      //use mode here
+    });
+*/
 Zcam.prototype.getMode = function(callback){
   request.get({url:this.endpoints.mode + '?action=query', json:true}, function (error, response, body) {
     if (error) {
@@ -361,12 +428,23 @@ Zcam.prototype.getMode = function(callback){
     if (body.code!== 0) {
       return callback(formatError(body));
     }
+    var mode = body.msg;
 
-    callback(null);
+    callback(null,mode);
   }.bind(this));
 };
 
-// switch the camera to another mode. possible values for mode are playback, still or movie
+/** @function switchToMode
+ *  @desc  switch the camera to another mode. possible values for mode are playback, still or movie
+    @param {string} mode the mode to switch to. ('playback' | 'still' | 'movie')
+    @param {switchToModeCallback} callback
+*/
+/** @callback switchToModeCallback
+ *  @param {string} error - contains the error message (null if none)
+ *  @example zcam1.switchToMode(function(err){
+      //new mode is set
+    });
+*/
 Zcam.prototype.switchToMode = function(mode, callback){
   var action;
   switch (mode) {
@@ -395,7 +473,18 @@ Zcam.prototype.switchToMode = function(mode, callback){
   }.bind(this));
 };
 
-// list the folders in the DCIM directory
+/** @function listDCIMFolders
+ *  @desc list the folders in the DCIM directory
+    @param {listDCIMFoldersCallback} callback
+*/
+/**
+ *  @callback listDCIMFoldersCallback
+ *  @param {string} error - contains the error message (null if none)
+ *  @param {string[]} folders - the list of folders
+ *  @example zcam1.listDCIMFolders(function(err,folders){
+      //use folders here
+    });
+*/
 Zcam.prototype.listDCIMFolders = function(callback){
   request.get({url:this.endpoints.listDCIMFolders, json:true}, function (error, response, body) {
     if (error) {
@@ -410,13 +499,34 @@ Zcam.prototype.listDCIMFolders = function(callback){
   }.bind(this));
 };
 
-// set the fileManager to work in an other DCIM directory
+/** @function setDCIMFolder
+ *  @desc  set the fileManager to work in an other DCIM directory
+    @param {string} DCIMFolder the DCIM folder to switch to .
+    @param {setDCIMFolderCallback} callback
+*/
+/** @callback setDCIMFolderCallback
+ *  @param {string} error - contains the error message (null if none)
+ *  @example zcam1.setDCIMFolder(function(err){
+      //new DCIM folder is set.
+    });
+*/
 Zcam.prototype.setDCIMFolder = function(DCIMFolder,callback){
   this.DCIMFolder = DCIMFolder;
   callback(null);
 };
 
-// list files in working directory
+/** @function listFiles
+ *  @desc list files in the working directory
+    @param {listFilesCallback} callback
+*/
+/**
+ *  @callback listFilesCallback
+ *  @param {string} error - contains the error message (null if none)
+ *  @param {string[]} files - the list of files in the working directory
+ *  @example zcam1.listFiles(function(err,folders){
+      //use files here
+    });
+*/
 Zcam.prototype.listFiles = function(callback){
   request.get({url:this.endpoints.filesManager + '?p=1&v=1', json:true}, function (error, response, body) {
     if (error) {
@@ -942,7 +1052,7 @@ Zcam.prototype.disableMagnify = function(settingName,callback){
 // set Magnify zone determined by a percentage in x and y
 Zcam.prototype.setMagnifyZone = function(xpercent,ypercent,callback){
   if (typeof xpercent==='function' || typeof ypercent==='function'){
-    callback = settingName;
+    callback = ypercent | xpercent;
     return callback('you must specify a percentage in x and y.');
   }
 
@@ -1030,9 +1140,7 @@ Zcam.prototype.initPreviewStreaming = function(listener, callback){
   }
 
   this.socket = new net.Socket();
-  this.socket.connect(this.previewStreamingPort,this.ip,function(){
-    callback(null);
-  }.bind(this));
+  this.socket.connect(this.previewStreamingPort,this.ip,callback);
   var nextFrameLength=-1;
   var buf  = Buffer.alloc(0);
 
