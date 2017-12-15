@@ -523,7 +523,7 @@ Zcam.prototype.setDCIMFolder = function(DCIMFolder,callback){
  *  @callback listFilesCallback
  *  @param {string} error - contains the error message (null if none)
  *  @param {string[]} files - the list of files in the working directory
- *  @example zcam1.listFiles(function(err,folders){
+ *  @example zcam1.listFiles(function(err,files){
       //use files here
     });
 */
@@ -541,7 +541,19 @@ Zcam.prototype.listFiles = function(callback){
   }.bind(this));
 };
 
-// download file by its filename in specified path (or current path if not specified)
+/** @function downloadFile
+ *  @desc download file by its filename in specified path (or current path if not specified)
+    @param {string} filename - the name of the file to download
+    @param {string} [path=current_working_dir] - the path to save the file to.
+    @param {downloadFileCallback} callback
+*/
+/**
+ *  @callback downloadFileCallback
+ *  @param {string} error - contains the error message (null if none)
+ *  @example zcam1.downloadFile(function(err){
+      //file is downloaded
+    });
+*/
 Zcam.prototype.downloadFile = function(filename, path, callback){
   if (typeof filename==='function'){
     callback = filename;
@@ -563,7 +575,18 @@ Zcam.prototype.downloadFile = function(filename, path, callback){
 
 };
 
-// return the stream of the specified file by its filename
+/** @function getFileStream
+ *  @desc return the stream of the specified file by its filename
+    @param {getFileStreamCallback} callback
+*/
+/**
+ *  @callback getFileStreamCallback
+ *  @param {string} error - contains the error message (null if none)
+ *  @param {Stream} fileStream - the stream of the file requested
+ *  @example zcam1.getFileStream(function(err,filestream){
+      //use filestream here.
+    });
+*/
 Zcam.prototype.getFileStream = function(filename, callback){
   if (typeof filename==='function'){
     callback = filename;
